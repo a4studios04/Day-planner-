@@ -1,11 +1,13 @@
-const CACHE_NAME = "pwa-cache-v2"; // Updated version
+const CACHE_NAME = "pwa-cache-v5"; // Updated version
 const CACHE_FILES = [
     "/",
     "/index.html",
     "/style.css",
     "/app.js",
+    "/utils.js",
     "/manifest.json",
-    "/icon.png"
+    "/icon.png",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" // Cache Font Awesome
 ];
 
 self.addEventListener("install", event => {
@@ -34,12 +36,3 @@ self.addEventListener("fetch", event => {
         })
     );
 });
-
-// Placeholder for Push API (requires server setup)
-// self.addEventListener("push", event => {
-//     const data = event.data.json();
-//     self.registration.showNotification(data.title, {
-//         body: data.body,
-//         icon: "icon.png"
-//     });
-// });
