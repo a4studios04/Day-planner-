@@ -11,17 +11,18 @@
 <body>
   <div class="container">
     <div class="sidebar">
-      <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+      <button class="sidebar-toggle"><i class="fas fa-ellipsis-v"></i></button>
       <ul>
         <li><a href="#" id="tasks-link"><i class="fas fa-tasks"></i> Tasks</a></li>
         <li><a href="#" id="calendar-link"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
         <li><a href="#" id="settings-link"><i class="fas fa-cog"></i> Settings</a></li>
       </ul>
-      <div class="settings-pane" id="settings-pane">
+      <div class="settings-pane" id="settings-pane" style="display: none;">
+        <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
         <h3>Settings</h3>
         <label><input type="checkbox" id="dark-mode-toggle"> Dark Mode</label>
         <button id="save-routine"><i class="fas fa-save"></i> Save Routine</button>
-        <button id="load-routine"><i class="fas fa-upload"></i> Load Routine</button>
+        <button id="load-routine"><i class="fas fa-upload"></i | Load Routine</button>
         <label for="task-filter">Filter Tasks:</label>
         <select id="task-filter">
           <option value="all">All Tasks</option>
@@ -33,7 +34,7 @@
     </div>
     <div class="main-content">
       <div id="offline-indicator">Offline Mode</div>
-      <h1>PWA Day Planner</h1>
+      <h1>Day Planner</h1>
       <form id="task-form">
         <div class="form-group">
           <label for="task-date">Date:</label>
@@ -64,8 +65,14 @@
         </div>
         <button type="submit" class="add-task-btn">Add Task</button>
       </form>
-      <div id="task-list" style="display: none;"></div>
-      <div id="calendar"></div>
+      <div id="task-list" style="display: none;">
+        <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+      </div>
+      <div id="calendar">
+        <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+        <h2>Calendar View</h2>
+        <div id="calendar-tasks"></div>
+      </div>
       <div id="toast" class="toast"></div>
     </div>
   </div>
