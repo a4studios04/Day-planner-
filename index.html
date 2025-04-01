@@ -6,20 +6,23 @@
   <title>Day Planner</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
   <div class="container">
     <div class="sidebar">
-      <button class="sidebar-toggle">☰</button>
+      <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
       <ul>
-        <li><a href="#" id="tasks-link">Tasks</a></li>
-        <li><a href="#" id="calendar-link">Calendar</a></li>
-        <li><a href="#" id="settings-link">Settings</a></li>
+        <li><a href="#" id="tasks-link"><i class="fas fa-tasks"></i> Tasks</a></li>
+        <li><a href="#" id="calendar-link"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
+        <li><a href="#" id="settings-link"><i class="fas fa-cog"></i> Settings</a></li>
       </ul>
-      <div class="settings-pane" id="settings-pane" style="display: none;">
+      <div class="settings-pane" id="settings-pane">
+        <h3>Settings</h3>
         <label><input type="checkbox" id="dark-mode-toggle"> Dark Mode</label>
-        <button id="save-routine">Save Routine</button>
-        <button id="load-routine">Load Routine</button>
+        <button id="save-routine"><i class="fas fa-save"></i> Save Routine</button>
+        <button id="load-routine"><i class="fas fa-upload"></i> Load Routine</button>
+        <label for="task-filter">Filter Tasks:</label>
         <select id="task-filter">
           <option value="all">All Tasks</option>
           <option value="completed">Completed</option>
@@ -32,18 +35,33 @@
       <div id="offline-indicator">Offline Mode</div>
       <h1>PWA Day Planner</h1>
       <form id="task-form">
-        <input type="date" id="task-date" required>
-        <input type="time" id="task-time" required>
-        <input type="text" id="task-desc" placeholder="Enter your task" required>
-        <select id="task-category">
-          <option value="Work">Work</option>
-          <option value="Personal">Personal</option>
-        </select>
-        <select id="task-repeat">
-          <option value="none">None</option>
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-        </select>
+        <div class="form-group">
+          <label for="task-date">Date:</label>
+          <input type="date" id="task-date" required>
+        </div>
+        <div class="form-group">
+          <label for="task-time">Time:</label>
+          <input type="time" id="task-time" required>
+        </div>
+        <div class="form-group">
+          <label for="task-desc">Task Description:</label>
+          <input type="text" id="task-desc" placeholder="Enter your task" required>
+        </div>
+        <div class="form-group">
+          <label for="task-category">Category:</label>
+          <select id="task-category">
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="task-repeat">Repeat:</label>
+          <select id="task-repeat">
+            <option value="none">None</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
         <button type="submit" class="add-task-btn">Add Task</button>
       </form>
       <div id="task-list" style="display: none;"></div>
@@ -52,6 +70,7 @@
     </div>
   </div>
   
+  <script src="utils.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
