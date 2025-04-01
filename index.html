@@ -10,6 +10,7 @@
 <body>
   <div class="container">
     <h1>PWA Day Planner</h1>
+    <div id="offline-indicator" style="display: none; color: red;">Offline Mode</div>
     <form id="task-form">
       <input type="date" id="task-date" required>
       <input type="time" id="task-time" required>
@@ -17,6 +18,7 @@
       <button type="submit" class="add-task-btn">Add Task</button>
     </form>
     <div id="task-list"></div>
+    <div id="toast" class="toast"></div>
   </div>
   
   <script src="app.js"></script>
