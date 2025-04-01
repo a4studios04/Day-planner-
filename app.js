@@ -3,9 +3,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const taskForm = document.getElementById("task-form");
     const taskList = document.getElementById("task-list");
     const toast = document.getElementById("toast");
-    let editingTaskId = null; // Track task being edited
+    const darkModeToggle = document.getElementById("dark-mode-toggle");
+    let editingTaskId = null;
+    let calendar;
+
+    // Initialize FullCalendar
+    const calendarEl = document.getElementById("calendar");
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        height: "auto",
+        events: [],
+    });
+    calendar.render();
 
     loadTasks();
+
+    // Dark mode toggle
+    darkModeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+        darkModeToggle.textContent = document.body.classList.contains("dark-mode") ? "☀️ Light Mode" : "🌙 Dark Mode";
+        localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+    });
+    if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+        darkModeToggle.textContent = "☀️ Light Mode";
+    }
 
     taskForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -13,26 +35,30 @@ document.addEventListener("DOMContentLoaded", () => {
         const taskDate = document.getElementById("task-date").value;
         const taskTime = document.getElementById("task-time").value;
         const taskDesc = document.getElementById("task-desc").value;
+        const taskCategory = document.getElementById("task-category").value;
+        const taskRepeat = document.getElementById("task-repeat").value;
 
         if (!taskDate || !taskTime || !taskDesc) return;
 
         const now = new Date();
         const taskDateTime = new Date(`${taskDate}T${taskTime}`);
-        if (taskDateTime < now) {
+        if (taskDateTime < now && taskRepeat === "none") {
             showToast("Warning: Task is in the past!", "orange");
         }
 
         const task = {
-            id: editingTaskId || Date.now() + Math.random().toString(36).substr(2, 9), // Unique ID
+            id: editingTaskId || Date.now() + Math.random().toString(36).substr(2, 9),
             date: taskDate,
             time: taskTime,
             desc: taskDesc,
-            completed: false
+            category: taskCategory,
+            repeat: taskRepeat,
+            completed: false,
         };
 
         saveTask(task);
         clearTaskList();
-        loadTasks(); // Reload sorted tasks
+        loadTasks();
         scheduleNotification(task);
 
         showToast(editingTaskId ? "Task updated!" : "Task added!", "green");
@@ -56,6 +82,8 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("task-date").value = taskCard.dataset.date;
             document.getElementById("task-time").value = taskCard.dataset.time;
             document.getElementById("task-desc").value = taskCard.dataset.desc;
+            document.getElementById("task-category").value = taskCard.dataset.category;
+            document.getElementById("task-repeat").value = taskCard.dataset.repeat;
             taskForm.querySelector("button").textContent = "Update Task";
             removeTask(id);
             taskCard.remove();
@@ -84,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let tasks = getTasks();
             tasks.sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
             tasks.forEach(displayTask);
+            updateCalendar(tasks);
         } catch (e) {
             console.error("Error loading tasks:", e);
             showToast("Error loading tasks!", "red");
@@ -101,12 +130,16 @@ document.addEventListener("DOMContentLoaded", () => {
         taskItem.dataset.date = task.date;
         taskItem.dataset.time = task.time;
         taskItem.dataset.desc = task.desc;
+        taskItem.dataset.category = task.category;
+        taskItem.dataset.repeat = task.repeat;
         if (task.completed) taskItem.classList.add("completed");
 
+        const categoryColor = getCategoryColor(task.category);
         taskItem.innerHTML = `
             <div>
+                <span class="category-dot" style="background-color: ${categoryColor}"></span>
                 <strong>${task.date} ${formatTime(task.time)}</strong>
-                <p>${task.desc}</p>
+                <p>${task.desc} ${task.repeat !== "none" ? `(${task.repeat})` : ""}</p>
             </div>
             <div class="task-buttons">
                 <button class="complete-btn">${task.completed ? "✅" : "⬜"}</button>
@@ -122,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             let tasks = getTasks().filter(task => task.id !== id);
             localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+            updateCalendar(tasks);
         } catch (e) {
             console.error("Error removing task:", e);
         }
@@ -135,6 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
         taskCard.classList.toggle("completed");
         taskCard.querySelector(".complete-btn").textContent = task.completed ? "✅" : "⬜";
         showToast(task.completed ? "Task completed!" : "Task marked incomplete!", "green");
+        updateCalendar(tasks);
     }
 
     function formatTime(time) {
@@ -156,6 +191,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         body: `${task.desc} at ${formatTime(task.time)}`,
                         icon: "icon.png"
                     });
+                    if (task.repeat !== "none") {
+                        rescheduleRecurringTask(task);
+                    }
                 }, delay);
             }
         } else if (Notification.permission !== "denied") {
@@ -163,6 +201,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (permission !== "granted") showToast("Notifications blocked!", "orange");
             });
         }
+    }
+
+    function rescheduleRecurringTask(task) {
+        let nextDate = new Date(`${task.date}T${task.time}`);
+        if (task.repeat === "daily") {
+            nextDate.setDate(nextDate.getDate() + 1);
+        } else if (task.repeat === "weekly") {
+            nextDate.setDate(nextDate.getDate() + 7);
+        }
+        task.date = nextDate.toISOString().split("T")[0];
+        saveTask(task);
+        scheduleNotification(task);
+    }
+
+    function getCategoryColor(category) {
+        return category === "Work" ? "#2196f3" : "#4caf50"; // Blue-5, Green-5
+    }
+
+    function updateCalendar(tasks) {
+        calendar.getEvents().forEach(event => event.remove());
+        tasks.forEach(task => {
+            calendar.addEvent({
+                title: task.desc,
+                start: `${task.date}T${task.time}`,
+                backgroundColor: getCategoryColor(task.category),
+                borderColor: getCategoryColor(task.category),
+                textColor: task.completed ? "#888" : "#fff",
+            });
+        });
     }
 
     function showToast(message, color) {
@@ -180,7 +247,6 @@ document.addEventListener("DOMContentLoaded", () => {
         Notification.requestPermission();
     }
 
-    // Offline indicator
     window.addEventListener("online", () => document.getElementById("offline-indicator").style.display = "none");
     window.addEventListener("offline", () => document.getElementById("offline-indicator").style.display = "block");
 });
