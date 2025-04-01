@@ -6,16 +6,31 @@
   <title>Day Planner</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>PWA Day Planner</h1>
-      <button id="dark-mode-toggle">🌙 Dark Mode</button>
+    <div class="sidebar">
+      <button class="sidebar-toggle">☰</button>
+      <ul>
+        <li><a href="#" id="tasks-link">Tasks</a></li>
+        <li><a href="#" id="calendar-link">Calendar</a></li>
+        <li><a href="#" id="settings-link">Settings</a></li>
+      </ul>
+      <div class="settings-pane" id="settings-pane" style="display: none;">
+        <label><input type="checkbox" id="dark-mode-toggle"> Dark Mode</label>
+        <button id="save-routine">Save Routine</button>
+        <button id="load-routine">Load Routine</button>
+        <select id="task-filter">
+          <option value="all">All Tasks</option>
+          <option value="completed">Completed</option>
+          <option value="work">Work</option>
+          <option value="personal">Personal</option>
+        </select>
+      </div>
     </div>
-    <div id="offline-indicator">Offline Mode</div>
     <div class="main-content">
+      <div id="offline-indicator">Offline Mode</div>
+      <h1>PWA Day Planner</h1>
       <form id="task-form">
         <input type="date" id="task-date" required>
         <input type="time" id="task-time" required>
@@ -31,15 +46,12 @@
         </select>
         <button type="submit" class="add-task-btn">Add Task</button>
       </form>
-      <div class="task-section">
-        <div id="task-list"></div>
-        <div id="calendar"></div>
-      </div>
+      <div id="task-list" style="display: none;"></div>
+      <div id="calendar"></div>
+      <div id="toast" class="toast"></div>
     </div>
-    <div id="toast" class="toast"></div>
   </div>
   
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
