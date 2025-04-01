@@ -1,33 +1,49 @@
 document.addEventListener("DOMContentLoaded", () => {
     const TASKS_KEY = "tasks";
+    const ROUTINE_KEY = "routineTemplate";
     const taskForm = document.getElementById("task-form");
     const taskList = document.getElementById("task-list");
+    const calendar = document.getElementById("calendar");
     const toast = document.getElementById("toast");
     const darkModeToggle = document.getElementById("dark-mode-toggle");
+    const sidebarToggle = document.querySelector(".sidebar-toggle");
+    const sidebar = document.querySelector(".sidebar");
+    const tasksLink = document.getElementById("tasks-link");
+    const calendarLink = document.getElementById("calendar-link");
+    const settingsLink = document.getElementById("settings-link");
+    const settingsPane = document.getElementById("settings-pane");
+    const saveRoutineBtn = document.getElementById("save-routine");
+    const loadRoutineBtn = document.getElementById("load-routine");
+    const taskFilter = document.getElementById("task-filter");
     let editingTaskId = null;
-    let calendar;
-
-    // Initialize FullCalendar
-    const calendarEl = document.getElementById("calendar");
-    calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "dayGridMonth",
-        height: "auto",
-        events: [],
-    });
-    calendar.render();
 
     loadTasks();
 
-    // Dark mode toggle
-    darkModeToggle.addEventListener("click", () => {
-        document.body.classList.toggle("dark-mode");
-        darkModeToggle.textContent = document.body.classList.contains("dark-mode") ? "☀️ Light Mode" : "🌙 Dark Mode";
-        localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
-    });
-    if (localStorage.getItem("darkMode") === "true") {
+    // Dark mode initialization
+    if (localStorage.getItem("darkMode") === "true" || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.body.classList.add("dark-mode");
-        darkModeToggle.textContent = "☀️ Light Mode";
+        darkModeToggle.checked = true;
     }
+    darkModeToggle.addEventListener("change", () => {
+        document.body.classList.toggle("dark-mode");
+        localStorage.setItem("darkMode", darkModeToggle.checked);
+    });
+
+    // Sidebar toggle
+    sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+
+    // View switching
+    const setView = (view) => {
+        taskList.style.display = view === "tasks" ? "block" : "none";
+        calendar.style.display = view === "calendar" ? "block" : "none";
+        settingsPane.style.display = view === "settings" ? "block" : "none";
+        localStorage.setItem("view", view);
+        if (view !== "settings") loadTasks();
+    };
+    tasksLink.addEventListener("click", (e) => { e.preventDefault(); setView("tasks"); });
+    calendarLink.addEventListener("click", (e) => { e.preventDefault(); setView("calendar"); });
+    settingsLink.addEventListener("click", (e) => { e.preventDefault(); setView("settings"); });
+    setView(localStorage.getItem("view") || "calendar");
 
     taskForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -54,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
             category: taskCategory,
             repeat: taskRepeat,
             completed: false,
+            archived: false,
         };
 
         saveTask(task);
@@ -89,6 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
             taskCard.remove();
         } else if (event.target.classList.contains("complete-btn")) {
             toggleTaskCompletion(id, taskCard);
+        } else if (event.target.classList.contains("archive-btn")) {
+            archiveTask(id);
+            taskCard.remove();
+            showToast("Task archived!", "gray");
         }
     });
 
@@ -109,10 +130,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function loadTasks() {
         try {
-            let tasks = getTasks();
+            let tasks = getTasks().filter(task => !task.archived);
+            const filter = taskFilter.value;
+            if (filter === "completed") tasks = tasks.filter(task => task.completed);
+            else if (filter === "work") tasks = tasks.filter(task => task.category === "Work");
+            else if (filter === "personal") tasks = tasks.filter(task => task.category === "Personal");
             tasks.sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
-            tasks.forEach(displayTask);
-            updateCalendar(tasks);
+            clearTaskList();
+            if (localStorage.getItem("view") === "tasks") {
+                tasks.forEach(displayTask);
+            } else {
+                updateCalendar(tasks);
+            }
         } catch (e) {
             console.error("Error loading tasks:", e);
             showToast("Error loading tasks!", "red");
@@ -144,6 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="task-buttons">
                 <button class="complete-btn">${task.completed ? "✅" : "⬜"}</button>
                 <button class="edit-btn">✏️ Edit</button>
+                <button class="archive-btn">🗄️ Archive</button>
                 <button class="delete-btn">❌ Delete</button>
             </div>
         `;
@@ -155,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             let tasks = getTasks().filter(task => task.id !== id);
             localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-            updateCalendar(tasks);
+            loadTasks();
         } catch (e) {
             console.error("Error removing task:", e);
         }
@@ -169,7 +199,15 @@ document.addEventListener("DOMContentLoaded", () => {
         taskCard.classList.toggle("completed");
         taskCard.querySelector(".complete-btn").textContent = task.completed ? "✅" : "⬜";
         showToast(task.completed ? "Task completed!" : "Task marked incomplete!", "green");
-        updateCalendar(tasks);
+        loadTasks();
+    }
+
+    function archiveTask(id) {
+        let tasks = getTasks();
+        const task = tasks.find(t => t.id === id);
+        task.archived = true;
+        localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        loadTasks();
     }
 
     function formatTime(time) {
@@ -199,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (Notification.permission !== "denied") {
             Notification.requestPermission().then(permission => {
                 if (permission !== "granted") showToast("Notifications blocked!", "orange");
+                else scheduleNotification(task); // Retry if granted
             });
         }
     }
@@ -220,15 +259,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateCalendar(tasks) {
-        calendar.getEvents().forEach(event => event.remove());
-        tasks.forEach(task => {
-            calendar.addEvent({
-                title: task.desc,
-                start: `${task.date}T${task.time}`,
-                backgroundColor: getCategoryColor(task.category),
-                borderColor: getCategoryColor(task.category),
-                textColor: task.completed ? "#888" : "#fff",
+        calendar.innerHTML = "<h2>Calendar View</h2>";
+        const groupedTasks = tasks.reduce((acc, task) => {
+            acc[task.date] = acc[task.date] || [];
+            acc[task.date].push(task);
+            return acc;
+        }, {});
+        Object.keys(groupedTasks).sort().forEach(date => {
+            const dateDiv = document.createElement("div");
+            dateDiv.innerHTML = `<h3>${date}</h3>`;
+            groupedTasks[date].forEach(task => {
+                const taskDiv = document.createElement("div");
+                taskDiv.className = `task-card ${task.completed ? "completed" : ""}`;
+                taskDiv.innerHTML = `
+                    <span style="color: ${getCategoryColor(task.category)}">${formatTime(task.time)}</span> 
+                    ${task.desc} ${task.repeat !== "none" ? `(${task.repeat})` : ""}
+                `;
+                dateDiv.appendChild(taskDiv);
             });
+            calendar.appendChild(dateDiv);
         });
     }
 
@@ -242,6 +291,34 @@ document.addEventListener("DOMContentLoaded", () => {
     function clearTaskList() {
         taskList.innerHTML = "";
     }
+
+    // Routine management
+    saveRoutineBtn.addEventListener("click", () => {
+        const routine = getTasks().filter(t => !t.archived).map(task => ({
+            ...task,
+            id: null,
+            date: null,
+            completed: false,
+            archived: false
+        }));
+        localStorage.setItem(ROUTINE_KEY, JSON.stringify(routine));
+        showToast("Routine saved!", "green");
+    });
+
+    loadRoutineBtn.addEventListener("click", () => {
+        const template = JSON.parse(localStorage.getItem(ROUTINE_KEY)) || [];
+        const today = new Date().toISOString().split("T")[0];
+        template.forEach(task => {
+            task.id = Date.now() + Math.random().toString(36).substr(2, 9);
+            task.date = document.getElementById("task-date").value || today;
+            saveTask(task);
+            scheduleNotification(task);
+        });
+        loadTasks();
+        showToast("Routine loaded!", "green");
+    });
+
+    taskFilter.addEventListener("change", loadTasks);
 
     if (Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission();
