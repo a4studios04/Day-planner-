@@ -1,4 +1,4 @@
-const CACHE_NAME = "pwa-cache-v1";
+const CACHE_NAME = "pwa-cache-v2"; // Updated version
 const CACHE_FILES = [
     "/",
     "/index.html",
@@ -34,3 +34,12 @@ self.addEventListener("fetch", event => {
         })
     );
 });
+
+// Placeholder for Push API (requires server setup)
+// self.addEventListener("push", event => {
+//     const data = event.data.json();
+//     self.registration.showNotification(data.title, {
+//         body: data.body,
+//         icon: "icon.png"
+//     });
+// });
