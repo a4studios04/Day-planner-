@@ -6,21 +6,40 @@
   <title>Day Planner</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
 </head>
 <body>
   <div class="container">
-    <h1>PWA Day Planner</h1>
-    <div id="offline-indicator" style="display: none; color: red;">Offline Mode</div>
-    <form id="task-form">
-      <input type="date" id="task-date" required>
-      <input type="time" id="task-time" required>
-      <input type="text" id="task-desc" placeholder="Enter your task" required>
-      <button type="submit" class="add-task-btn">Add Task</button>
-    </form>
-    <div id="task-list"></div>
+    <div class="header">
+      <h1>PWA Day Planner</h1>
+      <button id="dark-mode-toggle">🌙 Dark Mode</button>
+    </div>
+    <div id="offline-indicator">Offline Mode</div>
+    <div class="main-content">
+      <form id="task-form">
+        <input type="date" id="task-date" required>
+        <input type="time" id="task-time" required>
+        <input type="text" id="task-desc" placeholder="Enter your task" required>
+        <select id="task-category">
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+        </select>
+        <select id="task-repeat">
+          <option value="none">None</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+        <button type="submit" class="add-task-btn">Add Task</button>
+      </form>
+      <div class="task-section">
+        <div id="task-list"></div>
+        <div id="calendar"></div>
+      </div>
+    </div>
     <div id="toast" class="toast"></div>
   </div>
   
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
