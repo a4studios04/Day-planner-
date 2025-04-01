@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day Planner</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="container">
+    <h1>PWA Day Planner</h1>
+    <form id="task-form">
+      <input type="date" id="task-date" required>
+      <input type="time" id="task-time" required>
+      <input type="text" id="task-desc" placeholder="Enter your task" required>
+      <button type="submit" class="add-task-btn">Add Task</button>
+    </form>
+    <div id="task-list"></div>
+  </div>
+  
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log("Service Worker registered:", reg.scope))
+        .catch(err => console.error("Service Worker registration failed:", err));
+    }
+  </script>
+</body>
+</html>
